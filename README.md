@@ -1,4 +1,4 @@
-# GoIT DevOps Terraform & Kubernetes Project (lesson-7)
+# GoIT DevOps Terraform & Kubernetes Project (lesson-8-9)
 
 ## Опис проєкту
 
@@ -47,6 +47,7 @@ terraform init      # Ініціалізація проєкту та підкл�
 terraform plan      # Перегляд плану змін, які будуть внесені в інфраструктуру
 terraform apply     # Застосування змін (створення/оновлення ресурсів)
 terraform destroy   # Видалення всіх створених ресурсів
+terraform init -upgrade
 ```
 
 ---
