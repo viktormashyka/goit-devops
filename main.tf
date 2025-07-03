@@ -4,19 +4,25 @@ provider "aws" {
   region = "us-west-2"
 }
 
-data "aws_eks_cluster" "eks" {
-  name = var.cluster_name
-}
-
-data "aws_eks_cluster_auth" "eks" {
-  name = var.cluster_name
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_id]
+  }
 }
 
 provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.eks.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
-    token                  = data.aws_eks_cluster_auth.eks.token
+  kubernetes = {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    exec = {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_id]
+    }
   }
 }
 
@@ -51,11 +57,12 @@ module "eks" {
   cluster_version = "1.29"
   subnet_ids     = module.vpc.public_subnets
   vpc_id         = module.vpc.vpc_id
+  oidc_issuer_url = module.eks.cluster_oidc_issuer_url
 }
 
 module "jenkins" {
   source       = "./modules/jenkins"
-  cluster_name = module.eks.eks_cluster_name
+  cluster_name = module.eks.cluster_id
 
   providers = {
     helm = helm

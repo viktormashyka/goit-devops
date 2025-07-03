@@ -18,3 +18,8 @@ variable "vpc_id" {
   description = "VPC ID for EKS"
   type        = string
 }
+
+variable "oidc_issuer_url" {
+  description = "OIDC issuer URL for IRSA"
+  type        = string
+}
