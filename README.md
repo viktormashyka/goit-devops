@@ -79,17 +79,31 @@ terraform import module.s3_backend.aws_dynamodb_table.terraform_locks terraform-
 terraform import module.ecr.aws_ecr_repository.this lesson-7-ecr
 ```
 
-### 3. Ініціалізація та застосування Terraform
+### 3. Ініціалізація Terraform
 
 ```bash
 terraform init
-terraform plan
-terraform apply
+
 ```
 
 > Буде створено S3, DynamoDB, VPC, ECR, EKS.
 
 ---
+
+###
+
+```bash
+terraform import 'module.eks.module.eks.module.kms.aws_kms_alias.this["cluster"]' alias/eks/lesson-7-eks
+terraform import 'module.eks.module.eks.aws_cloudwatch_log_group.this[0]' /aws/eks/lesson-7-eks/cluster
+terraform import 'module.eks.module.eks.aws_iam_openid_connect_provider.oidc_provider[0]' arn:aws:iam::952279327296:oidc-provider/oidc.eks.us-west-2.amazonaws.com/id/04E9DC92AA8FA1914D4C5917DFFFA23D
+```
+
+### 3. Застосування Terraform
+
+```bash
+terraform plan
+terraform apply
+```
 
 ### 4. Налаштування доступу до EKS-кластера
 

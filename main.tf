@@ -60,11 +60,11 @@ module "eks" {
   oidc_issuer_url = module.eks.cluster_oidc_issuer_url
 }
 
-module "jenkins" {
-  source       = "./modules/jenkins"
-  cluster_name = module.eks.cluster_id
-
-  providers = {
-    helm = helm
-  }
-}
+# module "jenkins" {
+#   source       = "./modules/jenkins"
+#   cluster_name = module.eks.cluster_id
+#
+#   providers = {
+#     helm = helm
+#   }
+# }
