@@ -1,4 +1,20 @@
-# Terraform конфігурація для Lesson 7
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 4.0.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.0.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.0.0"
+    }
+  }
+}
+
 ## Використовуємо AWS як провайдер з регіоном us-west-2
 provider "aws" {
   region = "us-west-2"
@@ -60,11 +76,20 @@ module "eks" {
   oidc_issuer_url = module.eks.cluster_oidc_issuer_url
 }
 
-# module "jenkins" {
-#   source       = "./modules/jenkins"
-#   cluster_name = module.eks.cluster_id
-#
-#   providers = {
-#     helm = helm
-#   }
-# }
+## Підключаємо модуль Jenkins
+
+module "jenkins" {
+  source       = "./modules/jenkins"
+  cluster_name = module.eks.cluster_id
+
+  providers = {
+    helm = helm
+  }
+}
+
+## Підключаємо модуль ArgoCD
+module "argo_cd" {
+  source       = "./modules/argo_cd"
+  namespace    = "argocd"
+  chart_version = "5.46.4"
+}

@@ -1,0 +1,26 @@
+{{- range $app := .Values.applications }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ $app.name }}
+  namespace: {{ $app.namespace }}
+spec:
+  project: {{ $app.project }}
+  source:
+    repoURL: {{ $app.source.repoURL }}
+    path: {{ $app.source.path }}
+    targetRevision: {{ $app.source.targetRevision }}
+    helm:
+      valueFiles:
+        {{- range $file := $app.source.helm.valueFiles }}
+        - {{ $file }}
+        {{- end }}
+  destination:
+    server: {{ $app.destination.server }}
+    namespace: {{ $app.destination.namespace }}
+  syncPolicy:
+    automated:
+      prune: {{ $app.syncPolicy.automated.prune }}
+      selfHeal: {{ $app.syncPolicy.automated.selfHeal }}
+{{- end }}

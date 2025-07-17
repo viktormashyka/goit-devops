@@ -10,21 +10,66 @@
 ## Структура проєкту
 
 ```
-lesson-7/
-├── main.tf
+lesson-8-9/
 ├── backend.tf
+├── LICENSE
+├── main.tf
 ├── outputs.tf
-├── modules/
-│   ├── s3-backend/
-│   ├── vpc/
-│   ├── ecr/
-│   └── eks/
+├── variables.tf
+├── README.md
+├── .gitignore
 ├── charts/
 │   └── django-app/
-│       ├── templates/
 │       ├── Chart.yaml
-│       └── values.yaml
-└── README.md
+│       ├── values.yaml
+│       ├── terraform.tfstate
+│       └── templates/
+│           ├── configmap.yaml
+│           ├── deployment.yaml
+│           ├── hpa.yaml
+│           └── service.yaml
+├── django/
+│   └── Jenkinsfile
+├── modules/
+│   ├── argo_cd/
+│   │   ├── argo_cd.tf
+│   │   ├── outputs.tf
+│   │   ├── providers.tf
+│   │   ├── values.yaml
+│   │   ├── variables.tf
+│   │   └── charts/
+│   │       ├── Chart.yaml
+│   │       ├── values.yaml
+│   │       └── templates/
+│   │           ├── application.yaml
+│   │           └── repository.yaml
+│   ├── ecr/
+│   │   ├── ecr.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── eks/
+│   │   ├── aws_ebs_csi_driver.tf
+│   │   ├── eks.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── jenkins/
+│   │   ├── jenkins.tf
+│   │   ├── outputs.tf
+│   │   ├── providers.tf
+│   │   ├── values.yaml
+│   │   └── variables.tf
+│   ├── s3-backend/
+│   │   ├── dynamodb.tf
+│   │   ├── outputs.tf
+│   │   ├── s3.tf
+│   │   └── variables.tf
+│   └── vpc/
+│       ├── outputs.tf
+│       ├── routes.tf
+│       ├── variables.tf
+│       └── vpc.tf
+├── nginx/
+│   └── nginx.conf/
 ```
 
 ---
@@ -119,6 +164,39 @@ aws eks --region us-west-2 update-kubeconfig --name lesson-7-eks
 
 ---
 
+Go to the AWS Console → EKS → Clusters → lesson-7-eks
+Create access entry -> next -> choose AmazonEKSClusterAdminPolicy -> add policy -> next -> create
+
+---
+
+Go to IAM > Users > [Your User] > Security credentials.
+create user -> user name - terraform user -> Attach policies directly -> add AdministratorAccess -> next -> cerate user
+Click on terraform-user to view the user details.
+Go to the "Security credentials" tab.
+Create an access key (for programmatic ccess).
+Select "Command Line Interface (CLI)"
+Download or copy the Access Key ID and Secret Access Key.
+
+```bash
+export AWS_ACCESS_KEY_ID=AKIA53OCFMJAL7D3UZHR
+export AWS_SECRET_ACCESS_KEY=<aws-secret-key-from-aws-credentials>
+export AWS_DEFAULT_REGION=us-west-2
+aws sts get-caller-identity
+aws eks --region us-west-2 update-kubeconfig --name lesson-7-eks
+terraform apply
+```
+
+Log in to the AWS Console as the user/role that created the EKS cluster.
+Go to EKS > Clusters > lesson-7-eks > Configuration > Access > Add-ons > Create access entry > aws-auth ConfigMap.
+Edit the aws-auth ConfigMap to add your terraform-user’s ARN under mapUsers, like this:
+mapUsers: |
+
+- userarn: arn:aws:iam::<account-id>:user/terraform-user
+  username: terraform-user
+  groups:
+
+  - system:masters
+
 ### 5. Побудова та завантаження Docker-образу Django у ECR
 
 ```bash
@@ -130,10 +208,6 @@ docker tag <repo_name>:<tag> <aws_account_id>.dkr.ecr.us-west-2.amazonaws.com/<r
 
 docker push <aws_account_id>.dkr.ecr.us-west-2.amazonaws.com/<repo_name>:<tag>
 ```
-
-<!-- aws_account_id = 952279327296 -->
-<!-- docker tag goit-devops-web:latest 952279327296.dkr.ecr.us-west-2.amazonaws.com/lesson-7-ecr:latest -->
-<!-- docker push 952279327296.dkr.ecr.us-west-2.amazonaws.com/lesson-7-ecr:latest -->
 
 > Якщо використовуєте не дефолтний профіль:
 >
@@ -229,5 +303,44 @@ terraform destroy -lock=false
 - **HPA:** автоскейлінг подів (2-6) при CPU > 70%.
 - **ConfigMap:** для змінних середовища.
 - **values.yaml:** параметри образу, сервісу, autoscaler, змінних.
+
+---
+
+## CI/CD: Як застосувати та перевірити
+
+### 1. Застосування Terraform
+
+1. Ініціалізуйте Terraform:
+   ```bash
+   terraform init
+   ```
+2. Перегляньте план змін:
+   ```bash
+   terraform plan
+   ```
+3. Застосуйте зміни (створіть інфраструктуру):
+   ```bash
+   terraform apply
+   ```
+
+### 2. Перевірка Jenkins job
+
+1. Відкрийте веб-інтерфейс Jenkins (URL можна знайти у Terraform output або через Helm):
+   - Зайдіть у браузері за адресою Jenkins.
+2. Знайдіть pipeline job для Django (або створіть, якщо потрібно).
+3. Запустіть job вручну або дочекайтесь автоматичного запуску (наприклад, при push у репозиторій).
+4. Переконайтесь, що всі етапи виконуються:
+   - Build & Push Docker Image
+   - Update Chart Tag in Git
+5. Перевірте логи job — має бути успішний пуш Docker-образу в ECR та оновлення Helm chart у Git.
+
+### 3. Перевірка результату в Argo CD
+
+1. Відкрийте веб-інтерфейс Argo CD (URL можна знайти у Terraform output або через Helm):
+   - Зайдіть у браузері за адресою Argo CD.
+2. Авторизуйтесь (логін/пароль — див. outputs).
+3. Знайдіть Application, який відповідає вашому Django-деплою.
+4. Переконайтесь, що статус Application — "Synced" та "Healthy".
+5. Перевірте, що у кластері деплойнувся новий Docker-образ із актуальним тегом (див. details у Argo CD).
 
 ---

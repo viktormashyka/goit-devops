@@ -1,0 +1,11 @@
+{{- range $repo := .Values.repositories }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Repository
+metadata:
+  name: {{ $repo.name }}
+spec:
+  url: {{ $repo.url }}
+  username: {{ $repo.username }}
+  password: {{ $repo.password }}
+{{- end }}
