@@ -1,4 +1,4 @@
-# GoIT DevOps Terraform & Kubernetes Project (lesson-8-9)
+# GoIT DevOps Terraform & Kubernetes Project (lesson-db-module)
 
 ## Опис проєкту
 
@@ -10,7 +10,7 @@
 ## Структура проєкту
 
 ```
-lesson-8-9/
+lesson-db-module/
 ├── backend.tf
 ├── LICENSE
 ├── main.tf
@@ -57,6 +57,12 @@ lesson-8-9/
 │   │   ├── outputs.tf
 │   │   ├── providers.tf
 │   │   ├── values.yaml
+│   │   └── variables.tf
+│   ├── rds/
+│   │   ├── aurora.tf
+│   │   ├── outputs.tf
+│   │   ├── rds.tf
+│   │   ├── shared.tf
 │   │   └── variables.tf
 │   ├── s3-backend/
 │   │   ├── dynamodb.tf
@@ -342,5 +348,98 @@ terraform destroy -lock=false
 3. Знайдіть Application, який відповідає вашому Django-деплою.
 4. Переконайтесь, що статус Application — "Synced" та "Healthy".
 5. Перевірте, що у кластері деплойнувся новий Docker-образ із актуальним тегом (див. details у Argo CD).
+
+---
+
+## Приклад використання модуля rds
+
+```hcl
+module "rds" {
+  source = "./modules/rds"
+
+  name                   = "myapp-db"
+  use_aurora             = true                # true — Aurora, false — стандартний RDS
+  aurora_instance_count  = 2                   # Кількість інстансів у кластері Aurora
+  aurora_replica_count   = 1                   # Кількість реплік Aurora
+  engine_cluster         = "aurora-postgresql" # Engine для Aurora
+  engine_version_cluster = "15.3"              # Версія Aurora
+  parameter_group_family_aurora = "aurora-postgresql15"
+
+  engine                 = "postgres"          # Engine для RDS
+  engine_version         = "17.2"              # Версія RDS
+  parameter_group_family_rds = "postgres17"
+
+  instance_class         = "db.t3.medium"
+  allocated_storage      = 20
+  db_name                = "myapp"
+  username               = "postgres"
+  password               = "admin123AWS23"
+  subnet_private_ids     = module.vpc.private_subnets
+  subnet_public_ids      = module.vpc.public_subnets
+  publicly_accessible    = true
+  vpc_id                 = module.vpc.vpc_id
+  multi_az               = true
+  backup_retention_period = 7
+  parameters = {
+    max_connections            = "200"
+    log_min_duration_statement = "500"
+  }
+  tags = {
+    Environment = "dev"
+    Project     = "myapp"
+  }
+}
+```
+
+---
+
+## Опис змінних модуля rds
+
+| Змінна                        | Тип           | Опис                                    | Приклад/Default       |
+| ----------------------------- | ------------- | --------------------------------------- | --------------------- |
+| name                          | string        | Назва інстансу або кластера             | "myapp-db"            |
+| use_aurora                    | bool          | true — Aurora, false — стандартний RDS  | false                 |
+| aurora_instance_count         | number        | Кількість інстансів у кластері Aurora   | 2                     |
+| aurora_replica_count          | number        | Кількість реплік Aurora                 | 1                     |
+| engine_cluster                | string        | Engine для Aurora                       | "aurora-postgresql"   |
+| engine_version_cluster        | string        | Версія Aurora                           | "15.3"                |
+| parameter_group_family_aurora | string        | Parameter group family для Aurora       | "aurora-postgresql15" |
+| engine                        | string        | Engine для RDS                          | "postgres"            |
+| engine_version                | string        | Версія RDS                              | "14.7"                |
+| parameter_group_family_rds    | string        | Parameter group family для RDS          | "postgres15"          |
+| instance_class                | string        | Тип інстансу (EC2)                      | "db.t3.micro"         |
+| allocated_storage             | number        | Розмір диску (ГБ)                       | 20                    |
+| db_name                       | string        | Ім'я бази даних                         | "myapp"               |
+| username                      | string        | Користувач БД                           | "postgres"            |
+| password                      | string        | Пароль БД (sensitive)                   |                       |
+| vpc_id                        | string        | VPC ID                                  |                       |
+| subnet_private_ids            | list(string)  | Список приватних subnet                 |                       |
+| subnet_public_ids             | list(string)  | Список публічних subnet                 |                       |
+| publicly_accessible           | bool          | Дозволити публічний доступ до БД        | false                 |
+| multi_az                      | bool          | Розгорнути у кількох AZ                 | false                 |
+| backup_retention_period       | string/number | Кількість днів зберігання бекапів       | "7"                   |
+| parameters                    | map(string)   | Додаткові параметри для parameter group | {}                    |
+| tags                          | map(string)   | Теги для всіх ресурсів                  | {}                    |
+
+---
+
+## Як змінити тип БД, engine, клас інстансу
+
+- **Aurora або стандартний RDS:**
+  - Для Aurora: `use_aurora = true` (створюється кластер Aurora)
+  - Для RDS: `use_aurora = false` (створюється стандартний RDS instance)
+- **Engine та версія:**
+  - Для Aurora: змінюйте `engine_cluster` та `engine_version_cluster` (наприклад, "aurora-postgresql", "15.3")
+  - Для RDS: змінюйте `engine` та `engine_version` (наприклад, "postgres", "14.7")
+- **Клас інстансу:**
+  - Задайте потрібний тип через `instance_class` (наприклад, "db.t3.medium", "db.r6g.large")
+- **Розмір диску:**
+  - Змінюйте через `allocated_storage` (ГБ)
+- **Мережа:**
+  - Вкажіть потрібні subnet через `subnet_private_ids` та/або `subnet_public_ids`, а також `vpc_id`
+- **Параметри БД:**
+  - Додавайте або змінюйте параметри у map `parameters` (наприклад, max_connections, log_min_duration_statement)
+- **Теги:**
+  - Додавайте теги через map `tags`
 
 ---
