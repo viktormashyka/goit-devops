@@ -15,7 +15,9 @@ resource "aws_ecr_repository_policy" "this" {
       {
         Sid       = "AllowPushPull"
         Effect    = "Allow"
-        Principal = "*"
+        Principal = {
+          "AWS" = "arn:aws:iam::952279327296:root"
+        }
         Action    = [
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",

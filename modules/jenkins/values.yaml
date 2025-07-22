@@ -48,7 +48,8 @@ controller:
                       scope: GLOBAL
                       id: github-token
                       username: AndriyDmitriv
-                      password: <see .env>
+                      password: ${JENKINS_PASSWORD}
+
                       description: GitHub PAT
       seed-job: |
         jobs:

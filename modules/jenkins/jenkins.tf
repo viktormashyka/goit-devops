@@ -51,7 +51,7 @@ resource "aws_iam_role" "jenkins_kaniko_role" {
       {
         Effect = "Allow",
         Principal = {
-          Federated = var.oidc_provider_arn
+          "Federated" = var.oidc_provider_arn
         },
         Action = "sts:AssumeRoleWithWebIdentity",
         Condition = {
@@ -86,20 +86,6 @@ resource "aws_iam_role_policy" "jenkins_ecr_policy" {
       }
     ]
   })
-}
-
-resource "helm_release" "jenkins" {
-  name             = "jenkins"
-  namespace        = "jenkins"
-  repository       = "https://charts.jenkins.io"
-  chart            = "jenkins"
-  version          = "5.8.27"
-  create_namespace = true
-
-  values = [
-    file("${path.module}/values.yaml")
-  ]
-
 }
 
 

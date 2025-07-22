@@ -1,4 +1,4 @@
-# GoIT DevOps Terraform & Kubernetes Project (lesson-db-module)
+# GoIT DevOps final project
 
 ## Опис проєкту
 
@@ -10,7 +10,7 @@
 ## Структура проєкту
 
 ```
-lesson-db-module/
+project/
 ├── backend.tf
 ├── LICENSE
 ├── main.tf
@@ -184,7 +184,7 @@ Select "Command Line Interface (CLI)"
 Download or copy the Access Key ID and Secret Access Key.
 
 ```bash
-export AWS_ACCESS_KEY_ID=AKIA53OCFMJAL7D3UZHR
+export AWS_ACCESS_KEY_ID=AKIA53OCFMJAKVMCUJF3
 export AWS_SECRET_ACCESS_KEY=<aws-secret-key-from-aws-credentials>
 export AWS_DEFAULT_REGION=us-west-2
 aws sts get-caller-identity

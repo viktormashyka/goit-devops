@@ -1,0 +1,28 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: repositories.argoproj.io
+spec:
+  group: argoproj.io
+  names:
+    kind: Repository
+    plural: repositories
+    singular: repository
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                url:
+                  type: string
+                type:
+                  type: string
+                name:
+                  type: string
